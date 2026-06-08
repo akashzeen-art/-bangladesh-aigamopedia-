@@ -3,7 +3,6 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 5500;
-const BASE_PATH = (process.env.BASE_PATH || '').replace(/\/$/, '');
 const root = __dirname;
 
 function sendHtml(file) {
@@ -21,27 +20,20 @@ function localeRouter() {
   return r;
 }
 
-for (const lang of ['ar', 'pl', 'bn']) {
-  app.get(BASE_PATH + '/' + lang, sendHtml('index.html'));
-  app.get(BASE_PATH + '/' + lang + '/', sendHtml('index.html'));
-  app.use(BASE_PATH + '/' + lang, localeRouter());
+// Root → redirect to /bn
+app.get('/', (req, res) => res.redirect(302, '/bn/'));
+
+// /bn and /en routes
+for (const lang of ['bn', 'en']) {
+  app.get('/' + lang, sendHtml('index.html'));
+  app.get('/' + lang + '/', sendHtml('index.html'));
+  app.use('/' + lang, localeRouter());
 }
 
-// Root static files
-app.use(BASE_PATH + '/', express.static(root));
-// Root HTML
-app.get(BASE_PATH + '/', sendHtml('index.html'));
-if (BASE_PATH) {
-  app.get(BASE_PATH, sendHtml('index.html')); // /portal without trailing slash
-}
+app.use('/', express.static(root));
 
 app.listen(PORT, '0.0.0.0', () => {
-  const host = `http://localhost:${PORT}`;
-  const base = host + BASE_PATH;
   console.log(`AiGameopedia running on port ${PORT}`);
-  console.log(`  English: ${base}/`);
-  console.log(`  Arabic:  ${base}/ar`);
-  console.log(`  Polish:  ${base}/pl`);
-  console.log(`  Bangla:  ${base}/bn`);
-  if (BASE_PATH) console.log(`  (BASE_PATH=${BASE_PATH})`);
+  console.log(`  Bangla:  http://localhost:${PORT}/bn`);
+  console.log(`  English: http://localhost:${PORT}/en`);
 });
