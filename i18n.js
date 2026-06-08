@@ -1,31 +1,12 @@
 (function () {
   const pathname = window.location.pathname;
 
-  let appBasePath = '';
-  const meta = document.querySelector('meta[name="app-base-path"]');
-  if (meta && meta.getAttribute('content')) {
-    appBasePath = meta.getAttribute('content').replace(/\/$/, '');
-  } else {
-    const localeMatch = pathname.match(/^(.*)\/(?:bn)(\/|$)/);
-    if (localeMatch) {
-      appBasePath = localeMatch[1] || '';
-    } else if (pathname !== '/' && pathname !== '') {
-      appBasePath = pathname.replace(/\/$/, '').replace(/\/[^/]*$/, '');
-    }
-  }
-
-  const pathAfterBase = appBasePath ? pathname.slice(appBasePath.length) || '/' : pathname;
-  const isEn = pathAfterBase === '/en' || pathAfterBase.startsWith('/en/') ||
-               pathname === '/en' || pathname.startsWith('/en/');
-  const isBn = !isEn;
+  const isEn = pathname === '/en' || pathname.startsWith('/en/');
   const locale = isEn ? 'en' : 'bn';
-  const localePrefix = isEn ? appBasePath + '/en' : appBasePath;
 
   window.getLocale = function () { return locale; };
   window.isRTL = function () { return false; };
-  window.getBasePath = function () { return appBasePath; };
-  window.getLocalePrefix = function () { return localePrefix; };
-  window.isBn = function () { return isBn; };
+  window.isBn = function () { return !isEn; };
 
   const strings = isEn ? (window.I18N_EN || {}) : (window.I18N_BN || {});
   window.t = function (key) {
@@ -51,8 +32,7 @@
     });
     document.querySelectorAll('[data-i18n-html]').forEach(function (el) {
       if (!el.getAttribute('data-i18n')) {
-        const key = el.getAttribute('data-i18n-html');
-        el.innerHTML = window.t(key);
+        el.innerHTML = window.t(el.getAttribute('data-i18n-html'));
       }
     });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
@@ -66,13 +46,12 @@
     });
   }
 
-  function fixInternalLinks() { }
-  function fixFormLinks() { }
-
   function setLangButtonHref() {
     var pageFile = pathname.split('/').pop() || '';
     if (!pageFile.includes('.')) pageFile = 'index.html';
-    var targetHref = isEn ? ('./' + pageFile) : ('./en/' + pageFile);
+    // En page -> go back to Bangla (parent folder)
+    // Bn page -> go to /en/ version
+    var targetHref = isEn ? ('../' + pageFile) : ('./en/' + pageFile);
     document.querySelectorAll('.langBtn').forEach(function (btn) {
       btn.setAttribute('href', targetHref);
     });
@@ -82,16 +61,12 @@
     document.addEventListener('DOMContentLoaded', function () {
       setDocumentDirection();
       applyI18n();
-      fixInternalLinks();
-      fixFormLinks();
       setLangButtonHref();
       if (typeof window.onI18nReady === 'function') window.onI18nReady();
     });
   } else {
     setDocumentDirection();
     applyI18n();
-    fixInternalLinks();
-    fixFormLinks();
     setLangButtonHref();
     if (typeof window.onI18nReady === 'function') window.onI18nReady();
   }
