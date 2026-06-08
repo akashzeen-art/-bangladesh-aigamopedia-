@@ -1,10 +1,7 @@
 (function () {
   const pathname = window.location.pathname;
-  const metaLocale = document.querySelector('meta[name="app-locale"]');
-  const forcedLocale = metaLocale ? metaLocale.getAttribute('content') : null;
 
-  const isEn = forcedLocale === 'en' ||
-               (!forcedLocale && (pathname === '/en' || pathname.startsWith('/en/')));
+  const isEn = pathname === '/en' || pathname.startsWith('/en/');
   const locale = isEn ? 'en' : 'bn';
 
   window.getLocale = function () { return locale; };
@@ -52,9 +49,7 @@
   function setLangButtonHref() {
     var pageFile = pathname.split('/').pop() || '';
     if (!pageFile.includes('.')) pageFile = 'index.html';
-    // En page -> go back to Bangla (parent folder)
-    // Bn page -> go to /en/ version
-    var targetHref = isEn ? ('../' + pageFile) : ('./en/' + pageFile);
+    var targetHref = isEn ? ('/bn/' + pageFile) : ('/en/' + pageFile);
     document.querySelectorAll('.langBtn').forEach(function (btn) {
       btn.setAttribute('href', targetHref);
     });
