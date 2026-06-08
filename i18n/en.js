@@ -5,7 +5,7 @@ window.I18N_EN = {
   navMoreGames: 'More Games',
   navMyAccount: 'My Account',
   navTC: 'T & C',
-  langSwitch: 'عربي',
+  langSwitch: 'বাংলা',
   // Index - Section 1
   sec1Tagline: 'Game On, Always',
   sec1Des: 'Level Up Your Game Discovery',

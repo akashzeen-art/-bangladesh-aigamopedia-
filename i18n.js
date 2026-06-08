@@ -1,52 +1,42 @@
-/**
- * i18n: path-based locale
- * - / or /<base>/ = English
- * - /ar or /<base>/ar = Arabic (RTL)
- * - /pl or /<base>/pl = Polish
- * Set <meta name="app-base-path" content="/your-subpath"> if deployed under a subpath.
- */
 (function () {
   const pathname = window.location.pathname;
 
-  // Allow backend to set base path explicitly (e.g. when behind reverse proxy or subpath)
   let appBasePath = '';
   const meta = document.querySelector('meta[name="app-base-path"]');
   if (meta && meta.getAttribute('content')) {
     appBasePath = meta.getAttribute('content').replace(/\/$/, '');
   } else {
-    // Auto-detect: if path contains /ar or /pl, base is everything before it
-    const localeMatch = pathname.match(/^(.*)\/(?:ar|pl|bn)(\/|$)/);
+    const localeMatch = pathname.match(/^(.*)\/(?:bn)(\/|$)/);
     if (localeMatch) {
       appBasePath = localeMatch[1] || '';
     } else if (pathname !== '/' && pathname !== '') {
-      // English page at e.g. /portal/index.html -> base = /portal
       appBasePath = pathname.replace(/\/$/, '').replace(/\/[^/]*$/, '');
     }
   }
 
   const pathAfterBase = appBasePath ? pathname.slice(appBasePath.length) || '/' : pathname;
-  const isAr = pathAfterBase === '/ar' || pathAfterBase.startsWith('/ar/');
-  const isPl = pathAfterBase === '/pl' || pathAfterBase.startsWith('/pl/');
-  const isBn = pathAfterBase === '/bn' || pathAfterBase.startsWith('/bn/');
-  const locale = isAr ? 'ar' : isPl ? 'pl' : isBn ? 'bn' : 'en';
-  const localePrefix = isAr ? appBasePath + '/ar' : isPl ? appBasePath + '/pl' : isBn ? appBasePath + '/bn' : appBasePath;
+  const isEn = pathAfterBase === '/en' || pathAfterBase.startsWith('/en/') ||
+               pathname === '/en' || pathname.startsWith('/en/');
+  const isBn = !isEn;
+  const locale = isEn ? 'en' : 'bn';
+  const localePrefix = isEn ? appBasePath + '/en' : appBasePath;
 
   window.getLocale = function () { return locale; };
-  window.isRTL = function () { return isAr; };
+  window.isRTL = function () { return false; };
   window.getBasePath = function () { return appBasePath; };
   window.getLocalePrefix = function () { return localePrefix; };
   window.isBn = function () { return isBn; };
 
-  const strings = locale === 'ar' ? (window.I18N_AR || {}) : locale === 'pl' ? (window.I18N_PL || {}) : locale === 'bn' ? (window.I18N_BN || {}) : (window.I18N_EN || {});
+  const strings = isEn ? (window.I18N_EN || {}) : (window.I18N_BN || {});
   window.t = function (key) {
     const val = strings[key];
     return val !== undefined ? val : key;
   };
 
   function setDocumentDirection() {
-    document.documentElement.lang = locale === 'ar' ? 'ar' : locale === 'pl' ? 'pl' : locale === 'bn' ? 'bn' : 'en';
-    document.documentElement.dir = isAr ? 'rtl' : 'ltr';
-    document.body.classList.toggle('rtl', isAr);
+    document.documentElement.lang = locale;
+    document.documentElement.dir = 'ltr';
+    document.body.classList.remove('rtl');
   }
 
   function applyI18n() {
@@ -76,47 +66,13 @@
     });
   }
 
-  function fixInternalLinks() {
-    if (!isAr && !isPl && !isBn) return;
-    var localeRoot = appBasePath + '/' + locale;
-    document.querySelectorAll('a[href]').forEach(function (a) {
-      var href = a.getAttribute('href');
-      if (!href) return;
-      if (href.startsWith('http') || href.startsWith('mailto:')) return;
-      // Logo / hash links: point to locale home so tab switch keeps locale prefix
-      if (href.startsWith('#')) {
-        if (a.classList.contains('logo') || (a.getAttribute('aria-label') && a.getAttribute('aria-label').indexOf('logo') !== -1)) {
-          a.setAttribute('href', localeRoot + href);
-        }
-        return;
-      }
-      if (href.indexOf(localeRoot) === 0) return;
-      var path = href.startsWith('/') ? href : ('/' + href.replace(/^\.\//, ''));
-      if (path.indexOf('/' + locale) !== -1) return;
-      var targetPath = (path === '/' || path === '/index.html') ? localeRoot : (localeRoot + path);
-      a.setAttribute('href', targetPath);
-    });
-  }
-
-  function fixFormLinks() {
-    if (!isAr && !isPl && !isBn) return;
-    var localeRoot = appBasePath + '/' + locale;
-    document.querySelectorAll('form').forEach(function (form) {
-      var action = form.getAttribute('action');
-      if (action && !action.startsWith('http') && action.indexOf('/' + locale) === -1) {
-        form.setAttribute('action', localeRoot + (action.startsWith('/') ? action : '/' + action));
-      }
-    });
-  }
+  function fixInternalLinks() { }
+  function fixFormLinks() { }
 
   function setLangButtonHref() {
-    // Map current page filename to its counterpart in the other language
-    var pageFile = pathname.split('/').pop() || 'index.html';
+    var pageFile = pathname.split('/').pop() || '';
     if (!pageFile.includes('.')) pageFile = 'index.html';
-    var enHref = appBasePath + '/' + pageFile;
-    var arHref = appBasePath + '/ar/' + pageFile;
-    var bnHref = appBasePath + '/bn/' + pageFile;
-    var targetHref = isAr ? enHref : isBn ? enHref : arHref;
+    var targetHref = isEn ? ('./' + pageFile) : ('./en/' + pageFile);
     document.querySelectorAll('.langBtn').forEach(function (btn) {
       btn.setAttribute('href', targetHref);
     });
