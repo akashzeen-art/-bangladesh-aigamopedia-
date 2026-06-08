@@ -1,7 +1,10 @@
 (function () {
   const pathname = window.location.pathname;
+  const metaLocale = document.querySelector('meta[name="app-locale"]');
+  const forcedLocale = metaLocale ? metaLocale.getAttribute('content') : null;
 
-  const isEn = pathname === '/en' || pathname.startsWith('/en/');
+  const isEn = forcedLocale === 'en' ||
+               (!forcedLocale && (pathname === '/en' || pathname.startsWith('/en/')));
   const locale = isEn ? 'en' : 'bn';
 
   window.getLocale = function () { return locale; };
